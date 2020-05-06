@@ -6,16 +6,35 @@ class HashTableEntry:
         self.next = None
 
 
-class Node:
-    def __init__(self, value):
-        self.value = value
-        self.next = next
+class HashedLinkedList:
+    def __init__(self):
+        self.head = None
+
+    def add(self, key, value):
+        new_node = HashTableEntry(key, value)
+        new_node.next = self.head
+        self.head = new_node
+
+    def find(self, key):
+        current = self.head
+        while current:
+            if current.key == key:
+                return current.value
+            current = current.next
+
+    def delete(self, key):
+        if key == self.head.key:
+            self.head = self.head.next
+        current = self.head
+        prev = None
+        while current:
+            if current.key == key:
+                prev.next = current.next
+            prev = current
+            current = current.next
 
 
 class HashTable:
-    # A hash table that with `capacity` buckets
-    # that accepts string keys
-    # Implement this.
     def __init__(self, capacity):
         self.capacity = capacity
         self.storage = [[] for i in range(self.capacity)]
@@ -53,7 +72,7 @@ class HashTable:
         # between within the storage capacity of the hash table.
         #
         # return self.fnv1(key) % self.capacity
-        # return self.fnv1_64(key) % self.capacity
+        # return self.fnv1_64(key) % self.capacity # <- not working
         return self.djb2(key) % self.capacity
 
     # Allow collisions
@@ -66,14 +85,11 @@ class HashTable:
     # Avoiding collisions
     def put(self, key, value):
         h = self.storage[self.hash_index(key)]
-        found = False
-        for idx, element in enumerate(self.storage[h]):
-            if len(element) == 2 and element[0] == key:
-                self.storage[h][idx] = (key, value)
-                found = True
-                break
-        if not found:
-            self.storage[h].append((key, value))
+        if h:
+            self.storage[self.hash_index(key)].add(key, value)
+        else:
+            self.storage[self.hash_index(key)] = HashedLinkedList()
+            self.storage[self.hash_index(key)].add(key, value)
 
     # Allow collisions
     # def delete(self, key):
@@ -87,10 +103,10 @@ class HashTable:
 
     # Avoiding collisions
     def delete(self, key):
-        h = self.storage[self.hash_index(key)]
-        for idx, element in enumerate(self.storage[h]):
-            if element[0] == key:
-                del self.storage[h][idx]
+        if self.storage[self.hash_index(key)]:
+            self.storage[self.hash_index(key)].delete(key)
+        else:
+            print("Key not found")
 
     # Allow collisions
     # def get(self, key):
@@ -105,11 +121,10 @@ class HashTable:
     # Avoiding collisions
     def get(self, key):
         h = self.storage[self.hash_index(key)]
-        for i in self.storage[h]:
-            if i[0] == key:
-                return i[0]
-            else:
-                return None
+        if h:
+            return h.find(key)
+        else:
+            return None
 
     def resize(self):
         # Doubles the capacity of the hash table and
